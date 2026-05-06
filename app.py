@@ -15,13 +15,26 @@ def register():
         username=request.form['username']
         useremail=request.form['email']
         userpassword=request.form['password']
-        gotp=genotp() #'G6nG5k'
-        userdata={'username':username,'useremail':useremail,'userpassword':userpassword,'server_otp':gotp}
-        subject=f'SNM APP Verification'
-        body=f'Use the OTP for Verify:{gotp}'
-        sendmail(to=useremail,subject=subject,body=body)
-        flash('The OTP has been given mail')
-        return redirect(url_for('otpverification',serverdata=endata(userdata)))
+        try:
+            cursor=mydb.cursor()
+            cursor.execute("select count(useremail) from userdata where useremail=%s", [useremail])
+            count_email=cursor.fetchone() #output will be in tuple format (0,) or (1,)
+            cursor.close()
+        except Exception as e:
+            print(e)
+            flash('Could not verify email')
+            return redirect(url_for('register'))
+        else:
+            if count_email[0]==0:
+                gotp=genotp() #'G6nG5k'
+                userdata={'username':username,'useremail':useremail,'userpassword':userpassword,'server_otp':gotp}
+                subject=f'SNM APP Verification'
+                body=f'Use the OTP for Verify:{gotp}'
+                sendmail(to=useremail,subject=subject,body=body)
+                flash('The OTP has been given mail')
+                return redirect(url_for('otpverification',serverdata=endata(userdata)))
+            elif count_email[0] == 1:
+                flash('Email already exists')
     return render_template('register.html')
 @app.route('/otpverification/<serverdata>',methods=['GET','POST'])
 def otpverification(serverdata):
