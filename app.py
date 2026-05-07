@@ -60,19 +60,34 @@ def otpverification(serverdata):
         return render_template('otp.html')
 @app.route('/login',methods=['GET','POST'])
 def login():
-    
-    # if request.method=='POST':
-    #     email=request.form['email']
-    #     password=request.form['password']
-    #     cursor=mydb.cursor()
-    #     cursor.execute("select * from users where useremail=%s and userpassword=%s", [email, password])
-    #     user=cursor.fetchone()
-    #     cursor.close()
-    #     if user:
-    #         flash('Login successful')
-    #         return redirect(url_for('home'))
-    #     else:
-    #         flash('Invalid email or password')
-
+    if request.method=='POST':
+        login_useremail=request.form['email']
+        login_password=request.form['password']
+        try:
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select count(useremail) from userdata where useremail=%s', [login_useremail])
+            count_email=cursor.fetchone() #(0,) or (1,)
+            print(count_email)
+        except Exception as e:
+            print(e)
+            flash('Could not verify email')
+            return redirect(url_for('login'))
+        else:
+            if count_email[0]==1:
+                cursor.execute("select userpassword from userdata where useremail=%s", [login_useremail])
+                stored_password=cursor.fetchone() #it will return a tuple like ('password123',)
+                if stored_password[0]==login_password:
+                    flash('user logged in successfully')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('invalid password')
+                    return redirect(url_for('login'))
+            elif count_email[0]==0:
+                flash('email does not exist')
+                return redirect(url_for('login'))
     return render_template('login.html')
+    
+@app.route('/dashboard')
+def dashboard():
+    return ('dashboard.html')
 app.run(debug=True,use_reloader=True)
