@@ -93,7 +93,11 @@ def login():
     
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    if session.get('user'):
+        return render_template('dashboard.html')
+    else:
+        flash('please login to access dashboard')
+        return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
