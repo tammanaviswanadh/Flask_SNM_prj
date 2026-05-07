@@ -1,10 +1,13 @@
-from flask import Flask,request,redirect,url_for,render_template,flash
+from flask import Flask,request,redirect,url_for,render_template,flash,session
+from flask_session import Session #it is used to manage user sessions in a Flask application, allowing you to store and retrieve data across multiple requests for a specific user.
 from otp import genotp
 from cmail import sendmail
 from stoken import endata,dndata
 import mysql.connector
 mydb=mysql.connector.connect(user='root',password='Viswa@0210',host='localhost',db='snm_prj_db')
 app=Flask(__name__)
+app.config['SESSION_TYPE']='filesystem' #it configures the session type to be stored on the filesystem, allowing you to store session data in files on the server.
+Session(app) #it initializes the Flask-Session extension with the Flask application instance, enabling session management in the app.
 app.secret_key='code0909'
 @app.route('/')
 def home():
@@ -77,6 +80,7 @@ def login():
                 cursor.execute("select userpassword from userdata where useremail=%s", [login_useremail])
                 stored_password=cursor.fetchone() #it will return a tuple like ('password123',)
                 if stored_password[0]==login_password:
+                    session['user']=login_useremail
                     flash('user logged in successfully')
                     return redirect(url_for('dashboard'))
                 else:
@@ -89,5 +93,15 @@ def login():
     
 @app.route('/dashboard')
 def dashboard():
-    return ('dashboard.html')
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+def logout():
+    if session.get('user'):
+        session.pop('user')
+        flash('user logged out successfully')
+        return redirect(url_for('login'))
+    else:
+        flash('No user is currently logged in')
+        return redirect(url_for('login'))
 app.run(debug=True,use_reloader=True)

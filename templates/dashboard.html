@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes Dashboard</title>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{{url_for('static',filename='dashboard.css')}}" /> <!-- you can call the stylesheet using this syntax as well, its called jinja syntax, it is used to call the static files in flask, you can also use the link tag to call the stylesheet but this is the recommended way in flask -->
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+
+        <!-- Logo -->
+        <div class="logo">
+            <i class="fa-solid fa-book-open"></i>
+            NotesHub
+        </div>
+
+        <!-- Menu -->
+        <ul class="nav-links">
+
+            <!-- Notes Dropdown -->
+            <li class="dropdown">
+                <a href="#">
+                    Notes <i class="fa-solid fa-caret-down"></i>
+                </a>
+
+                <ul class="dropdown-menu">
+                    <li><a href="#">Add Notes</a></li>
+                    <li><a href="#">View All Notes</a></li>
+                    <li><a href="#">Get Excel Data</a></li>
+                </ul>
+            </li>
+
+            <!-- Files Dropdown -->
+            <li class="dropdown">
+                <a href="#">
+                    Files <i class="fa-solid fa-caret-down"></i>
+                </a>
+
+                <ul class="dropdown-menu">
+                    <li><a href="#">Upload File</a></li>
+                    <li><a href="#">View All Files</a></li>
+                </ul>
+            </li>
+
+
+            <!-- Logout -->
+            <li>
+                <a href="#" class="logout-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+        </ul>
+
+        <div class="viz">
+            {{session.get('user')}} <!-- it will return the email of the logged in user, if there is no user logged in it will return None -->
+        </div>
+
+
+        <!-- Search -->
+        <div class="search-box">
+            <input type="text" placeholder="Search..." />
+            <button>
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+
+    </nav>
+
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Welcome to NotesHub</h1>
+        <p>Manage your notes and files efficiently with a clean dashboard.</p>
+    </section>
+
+</body>
+</html>
