@@ -108,4 +108,33 @@ def logout():
     else:
         flash('No user is currently logged in')
         return redirect(url_for('login'))
+
+@app.route('/addnotes',methods=['GET','POST'])
+def addnotes():
+    if not session.get('user'):
+        flash('please login to access addnotes page')
+        return redirect(url_for('login'))
+    if request.method=='POST':
+        title=request.form['title']
+        description=request.form['description']
+        try:
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+            user_id=cursor.fetchone() #(1,) or (2,)
+            if user_id[0]:
+                cursor.execute('insert into notesdata (notes_title, notes_description, userid) values (%s, %s, %s)', [title, description, user_id[0]])
+                mydb.commit()
+                cursor.close()
+            else:
+                flash('user not found, could not fetch user details')
+                return redirect(url_for('addnotes')) 
+        except Exception as e:
+            print(e)
+            flash('could not store notesdata details')
+            return redirect(url_for('addnotes'))
+        else:
+            flash('notes added successfully')
+            return redirect(url_for('addnotes'))
+    return render_template('addnotes.html')
+    
 app.run(debug=True,use_reloader=True)

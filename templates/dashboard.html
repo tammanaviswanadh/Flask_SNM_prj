@@ -6,8 +6,8 @@
     <title>Notes Dashboard</title>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="{{url_for('static',filename='dashboard.css')}}" /> <!-- you can call the stylesheet using this syntax as well, its called jinja syntax, it is used to call the static files in flask, you can also use the link tag to call the stylesheet but this is the recommended way in flask -->
-
+    <link rel="stylesheet" href="{{url_for('static',filename='dashboard.css')}}" />
+    {% block addcss %}{% endblock %}
     <!-- Font Awesome -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -33,7 +33,7 @@
                 </a>
 
                 <ul class="dropdown-menu">
-                    <li><a href="#">Add Notes</a></li>
+                    <li><a href="{{url_for('addnotes')}}">Add Notes</a></li>
                     <li><a href="#">View All Notes</a></li>
                     <li><a href="#">Get Excel Data</a></li>
                 </ul>
@@ -50,8 +50,7 @@
                     <li><a href="#">View All Files</a></li>
                 </ul>
             </li>
-
-
+            
             <!-- Logout -->
             <li>
                 <a href="{{url_for('logout')}}" class="logout-btn">
@@ -75,13 +74,23 @@
         </div>
 
     </nav>
-
+    
+    <center>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+    </center>
 
     <!-- Hero Section -->
+     {% block content %}
     <section class="hero">
         <h1>Welcome to NotesHub</h1>
         <p>Manage your notes and files efficiently with a clean dashboard.</p>
     </section>
-
+    {% endblock %}
 </body>
 </html>
