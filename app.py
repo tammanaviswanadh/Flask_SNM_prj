@@ -136,5 +136,25 @@ def addnotes():
             flash('notes added successfully')
             return redirect(url_for('addnotes'))
     return render_template('addnotes.html')
+
+@app.route('/viewallnotes')
+def viewallnotes():
+    if not session.get('user'):
+        flash('please login to access viewallnotes page')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select notesid, notes_title, created_at from notesdata where userid=%s',[user_id])
+        stored_allnotesdata=cursor.fetchall() #it will return a list of tuples like [('title1', 'description1', '2023-09-01 10:00:00'), ('title2', 'description2', '2023-09-02 11:00:00')] 
+        print(stored_allnotesdata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch notesdata details')
+        return redirect(url_for('dashboard'))
+    else:
+        return render_template('viewallnotes.html', stored_allnotesdata=stored_allnotesdata)
     
 app.run(debug=True,use_reloader=True)
