@@ -178,4 +178,24 @@ def viewnotes(nid):
     else:
         return render_template('viewnotes.html', stored_notesdata=stored_notesdata)
 
+@app.route('/deletenotes/<nid>')
+def deletenotes(nid):
+    if not session.get('user'):
+        flash('please login to access delete notes')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('delete from notesdata where userid=%s and notesid=%s',[user_id, nid])
+        mydb.commit()
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not delete notesdata details')
+        return redirect(url_for('dashboard'))
+    else:
+        flash('notes deleted successfully')
+        return redirect(url_for('viewallnotes'))
+
 app.run(debug=True,use_reloader=True)
