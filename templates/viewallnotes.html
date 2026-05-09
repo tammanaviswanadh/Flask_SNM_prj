@@ -34,7 +34,7 @@
                 <td data-label="Date">{{ note[2] }}</td>
 
                 <td data-label="View">
-                    <a href="#" class="view-btn">View</a>
+                    <a href="{{ url_for('viewnotes', nid=note[0]) }}" class="view-btn">View</a>
                 </td>
 
                 <td data-label="Update">
