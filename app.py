@@ -4,8 +4,10 @@ from otp import genotp
 from cmail import sendmail
 from stoken import endata,dndata
 import mysql.connector
+import flask_excel as excel
 mydb=mysql.connector.connect(user='root',password='Viswa@0210',host='localhost',db='snm_prj_db')
 app=Flask(__name__)
+excel.init_excel(app) #it initializes the Flask-Excel extension with the Flask application instance, enabling Excel-related functionality in the app.
 app.config['SESSION_TYPE']='filesystem' #it configures the session type to be stored on the filesystem, allowing you to store session data in files on the server.
 Session(app) #it initializes the Flask-Session extension with the Flask application instance, enabling session management in the app.
 app.secret_key='code0909'
@@ -239,5 +241,27 @@ def updatenotes(nid):
                 return redirect(url_for('updatenotes', nid=nid))
         return render_template('updatenotes.html', stored_notesdata=stored_notesdata)
 
+@app.route('/getexceldata')
+def getexceldata():
+    if not session.get('user'):
+        flash('please login to access viewallnotes page')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select notesid, notes_title, notes_description, created_at from notesdata where userid=%s',[user_id])
+        stored_allnotesdata=cursor.fetchall() #it will return a list of tuples like [('title1', 'description1', '2023-09-01 10:00:00'), ('title2', 'description2', '2023-09-02 11:00:00')] 
+        print(stored_allnotesdata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch notesdata details')
+        return redirect(url_for('dashboard'))
+    else:
+        array_data = [list(i) for i in stored_allnotesdata] #it converts the list of tuples into a list of lists like [['title1', 'description1', '2023-09-01 10:00:00'], ['title2', 'description2', '2023-09-02 11:00:00']]
+        columns=['Notesid', 'NotesTitle', 'NotesDescription', 'Created_at']
+        array_data.insert(0, columns) #it inserts the column names as the first row in the array_data list like [['Notesid', 'NotesTitle', 'NotesDescription', 'Created_at'], ['title1', 'description1', '2023-09-01 10:00:00'], ['title2', 'description2', '2023-09-02 11:00:00']]
+        return excel.make_response_from_array(array_data,'xlsx',file_name='AllNotesdata.xlsx') 
 
 app.run(debug=True,use_reloader=True)
