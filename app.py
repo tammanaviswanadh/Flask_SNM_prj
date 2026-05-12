@@ -216,6 +216,27 @@ def updatenotes(nid):
         flash('could not fetch notesdata details')
         return redirect(url_for('viewallnotes'))
     else:
+        if request.method == 'POST':
+            updated_title = request.form['title']
+            updated_description = request.form['description']
+            try:
+                cursor = mydb.cursor(buffered=True)
+                cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+                user_id = cursor.fetchone()  # (1) or (2)
+                if user_id[0]:
+                    cursor.execute('update notesdata set notes_title=%s, notes_description=%s where userid=%s and notesid=%s', [updated_title, updated_description, user_id[0], nid])
+                    mydb.commit()
+                    cursor.close()
+                else:
+                    flash('user not found, could not fetch user details')
+                    return redirect(url_for('updatenotes', nid=nid))
+            except Exception as e:
+                print(e)
+                flash('could not update notesdata details')
+                return redirect(url_for('updatenotes', nid=nid))
+            else:
+                flash('notes updated successfully')
+                return redirect(url_for('updatenotes', nid=nid))
         return render_template('updatenotes.html', stored_notesdata=stored_notesdata)
 
 
