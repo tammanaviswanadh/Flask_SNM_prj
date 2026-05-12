@@ -198,4 +198,25 @@ def deletenotes(nid):
         flash('notes deleted successfully')
         return redirect(url_for('viewallnotes'))
 
+@app.route('/updatenotes/<nid>', methods=['GET', 'POST'])
+def updatenotes(nid):
+    if not session.get('user'):
+        flash('please login to access the dashboard features')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select notesid, notes_title, notes_description, created_at from notesdata where userid=%s and notesid=%s',[user_id, nid])
+        stored_notesdata=cursor.fetchone()  #it will return a single tuple like ('title1', 'description1', '2023-09-01 10:00:00')
+        print(stored_notesdata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch notesdata details')
+        return redirect(url_for('viewallnotes'))
+    else:
+        return render_template('updatenotes.html', stored_notesdata=stored_notesdata)
+
+
 app.run(debug=True,use_reloader=True)
