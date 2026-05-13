@@ -264,4 +264,52 @@ def getexceldata():
         array_data.insert(0, columns) #it inserts the column names as the first row in the array_data list like [['Notesid', 'NotesTitle', 'NotesDescription', 'Created_at'], ['title1', 'description1', '2023-09-01 10:00:00'], ['title2', 'description2', '2023-09-02 11:00:00']]
         return excel.make_response_from_array(array_data,'xlsx',file_name='AllNotesdata.xlsx') 
 
+@app.route('/fileupload', methods=['GET', 'POST'])
+def fileupload():
+    if not session.get('user'):
+        flash('please login to access the file upload feature from dashboard')
+        return redirect(url_for('userlogin'))
+    if request.method == 'POST':
+        user_filedata=request.files['filedata'] #accepts the file uploaded by the user and stores it in the user_filedata variable as a FileStorage object
+        #print(user_filedata)
+        #print(user_filedata.read()) #it reads the content of the uploaded file and prints it in the console. Note that after reading the file, the file pointer will be at the end of the file, so if you want to read it again, you need to reset the file pointer using user_filedata.seek(0)
+        #print(user_filedata.filename) #it prints the name of the uploaded file in the console
+        fname=user_filedata.filename
+        fdata=user_filedata.read() #it reads the content of the uploaded file and stores it in the fdata variable as bytes
+        try:
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+            user_id=cursor.fetchone()[0] #(1) or (2)
+            cursor.execute('insert into filesdata (filename, filedata, userid) values (%s, %s, %s)', [fname, fdata, user_id])
+            mydb.commit()
+            cursor.close()
+        except Exception as e:
+            print(e)
+            flash('could not store filedata details')
+            return redirect(url_for('fileupload'))
+        else:
+            flash('File uploaded successfully')
+            return redirect(url_for('fileupload'))
+    return render_template('fileupload.html')
+
+@app.route('/viewallfiles')
+def viewallfiles():
+    if not session.get('user'):
+        flash('please login to access viewallfiles page')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select filesid, filename, created_at from filesdata where userid=%s',[user_id])
+        stored_allfilesdata=cursor.fetchall() #it will return a list of tuples like [('file1.txt', '2023-09-01 10:00:00'), ('file2.txt', '2023-09-02 11:00:00')] 
+        # print(stored_allfilesdata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch file details')
+        return redirect(url_for('dashboard'))
+    else:
+        return render_template('viewallfiles.html', stored_allfilesdata=stored_allfilesdata)
+
 app.run(debug=True,use_reloader=True)

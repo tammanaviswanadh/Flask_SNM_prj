@@ -1,0 +1,63 @@
+{% extends "dashboard.html" %}
+{% block title %}<title>View Files</title>{% endblock %}
+{% block addcss %}
+<link rel="stylesheet" href="{{url_for('static',filename='viewallfiles.css')}}" />
+{% endblock %}
+{% block content %}
+    
+
+<div class="container">
+
+    <h1>View Files</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>FileId</th>
+                <th>File Name</th>
+                <th>Uploaded Date</th>
+                <th>View</th>
+                <th>Download</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for file in stored_allfilesdata %}
+
+            <tr>
+                <td data-label="ID">{{ file[0] }}</td>
+
+                <td data-label="Title">{{ file[1] }}</td>
+
+                <td data-label="Date">{{ file[2] }}</td>
+
+                <td data-label="View">
+                    <a href="#" class="view-btn">View</a>
+                </td>
+
+                <td data-label="Download">
+                    <a href="#" class="download-btn">Download</a>
+                </td>
+
+                <td data-label="Delete">
+                    <a href="#" class="delete-btn">Delete</a>
+                </td>
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="6" class="no-data">
+                    No files found
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}
