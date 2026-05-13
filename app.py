@@ -312,4 +312,24 @@ def viewallfiles():
     else:
         return render_template('viewallfiles.html', stored_allfilesdata=stored_allfilesdata)
 
+@app.route('/deletefiles/<fid>')
+def deletefiles(fid):
+    if not session.get('user'):
+        flash('please login to access delete files')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('delete from filesdata where userid=%s and filesid=%s',[user_id, fid])
+        mydb.commit()
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not delete file details')
+        return redirect(url_for('dashboard'))
+    else:
+        flash('file deleted successfully')
+        return redirect(url_for('viewallfiles'))
+        
 app.run(debug=True,use_reloader=True)
