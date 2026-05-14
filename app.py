@@ -7,6 +7,7 @@ from stoken import endata,dndata
 import mysql.connector
 import flask_excel as excel
 from io import BytesIO #io means input output module, it is used to handle binary data in memory, allowing you to create file-like objects that can be used to read and write binary data without the need for actual files on disk.
+import re
 mydb=mysql.connector.connect(user='root',password='Viswa@0210',host='localhost',db='snm_prj_db')
 app=Flask(__name__)
 excel.init_excel(app) #it initializes the Flask-Excel extension with the Flask application instance, enabling Excel-related functionality in the app.
@@ -381,5 +382,38 @@ def downloadfiles(fid):
         return send_file(bytes_array, as_attachment=True, download_name=stored_filedata[1]) #it sends the file to the client for download, with the original filename as the download name
 
         return render_template('downloadfiles.html', stored_filedata=stored_filedata)
+
+
+@app.route('/searchnotesdata', methods=['POST'])
+def searchnotesdata():
+    if not session.get('user'):
+        flash('please login to access search notes feature from dashboard')
+        return redirect(url_for('login'))
+    # search_query=request.form['searchquery']
+    try:
+        user_search=request.form['search'] #it gets the search query entered by the user in the search input field of the dashboard and stores it in the user_search variable
+        strg=['A-Za-z0-9']
+        pattern=re.compile(f'^{strg}',re.IGNORECASE) #it compiles a regular expression pattern that matches any string that starts with an alphanumeric character, ignoring case sensitivity     
+        if pattern.match(user_search): #it checks if the user_search query matches the compiled regular expression pattern, ensuring that the search query starts with an alphanumeric character
+            try:
+                cursor=mydb.cursor(buffered=True)
+                cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+                user_id=cursor.fetchone()[0] #(1) or (2)
+                cursor.execute('select notesid, notes_title, created_at from notesdata where (notesid like %s or notes_title like %s or created_at like %s or notes_description like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_search+'%', user_id])
+                search_result=cursor.fetchall() #it will return a list of tuples that match the search query like [('title1', '2023-09-01 10:00:00'), ('title2', '2023-09-02 11:00:00')]
+                cursor.close()
+            except Exception as e:
+                print(e)
+                flash('could not fetch search data pls check')
+                return redirect(url_for('dashboard')) 
+            else:
+                return render_template('viewallnotes.html',stored_allnotesdata=search_result) 
+        else:
+            flash('invalid search query, please enter a valid search term')
+            return redirect(url_for('dashboard'))
+    except Exception as e:
+        print(e)
+        flash('could not process search query')
+        return redirect(url_for('dashboard'))
 
 app.run(debug=True,use_reloader=True)

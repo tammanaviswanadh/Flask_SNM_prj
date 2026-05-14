@@ -66,12 +66,14 @@
 
 
         <!-- Search -->
-        <div class="search-box">
-            <input type="text" placeholder="Search..." />
+         <form method="post" action="{{url_for('searchnotesdata')}}"> 
+        <div class="search-box" >
+            <input type="text" name="search" placeholder="Search..." />
             <button>
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
         </div>
+        </form>
 
     </nav>
     
