@@ -399,7 +399,8 @@ def searchnotesdata():
                 cursor=mydb.cursor(buffered=True)
                 cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
                 user_id=cursor.fetchone()[0] #(1) or (2)
-                cursor.execute('select notesid, notes_title, created_at from notesdata where (notesid like %s or notes_title like %s or created_at like %s or notes_description like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_search+'%', user_id])
+                cursor.execute('select notesid, notes_title, created_at from notesdata where (notesid like %s or notes_title like %s or created_at like %s or notes_description like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_search+'%', user_id]) #it executes a SQL query to search for notesdata records that match the user_search query in the notesid, notes_title, created_at, or notes_description columns, and belong to the logged-in user. The %s placeholders are used for parameterized queries to prevent SQL injection, and the user_search+'%' syntax allows for partial matching of the search query.
+                cursor.execute('select filesid, filename, created_at from filesdata where (filesid like %s or filename like %s or created_at like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_id]) #it executes a SQL query to search for filesdata records that match the user_search query in the filesid, filename, or created_at columns, and belong to the logged-in user. The %s placeholders are used for parameterized queries to prevent SQL injection, and the user_search+'%' syntax allows for partial matching of the search query.
                 search_result=cursor.fetchall() #it will return a list of tuples that match the search query like [('title1', '2023-09-01 10:00:00'), ('title2', '2023-09-02 11:00:00')]
                 cursor.close()
             except Exception as e:
@@ -415,5 +416,39 @@ def searchnotesdata():
         print(e)
         flash('could not process search query')
         return redirect(url_for('dashboard'))
+
+'''
+@app.route('/searchfilesdata', methods=['POST'])
+def searchfilessdata():
+    if not session.get('user'):
+        flash('please login to access search files feature from dashboard')
+        return redirect(url_for('login'))
+    # search_query=request.form['searchquery']
+    try:
+        user_search=request.form['search'] #it gets the search query entered by the user in the search input field of the dashboard and stores it in the user_search variable
+        strg=['A-Za-z0-9']
+        pattern=re.compile(f'^{strg}',re.IGNORECASE) #it compiles a regular expression pattern that matches any string that starts with an alphanumeric character, ignoring case sensitivity     
+        if pattern.match(user_search): #it checks if the user_search query matches the compiled regular expression pattern, ensuring that the search query starts with an alphanumeric character
+            try:
+                cursor=mydb.cursor(buffered=True)
+                cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+                user_id=cursor.fetchone()[0] #(1) or (2)
+                cursor.execute('select filesid, filename, uploaded_at from filesdata where (filesid like %s or filename like %s or uploaded_at like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_id])
+                search_result=cursor.fetchall() #it will return a list of tuples that match the search query like [('title1', '2023-09-01 10:00:00'), ('title2', '2023-09-02 11:00:00')]
+                cursor.close()
+            except Exception as e:
+                print(e)
+                flash('could not fetch search data pls check')
+                return redirect(url_for('dashboard')) 
+            else:
+                return render_template('viewallfiles.html',stored_allfilesdata=search_result) 
+        else:
+            flash('invalid search query, please enter a valid search term')
+            return redirect(url_for('dashboard'))
+    except Exception as e:
+        print(e)
+        flash('could not process search query')
+        return redirect(url_for('dashboard'))
+'''
 
 app.run(debug=True,use_reloader=True)
