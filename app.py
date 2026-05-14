@@ -1,10 +1,12 @@
-from flask import Flask,request,redirect,url_for,render_template,flash,session
+from flask import Flask,request,redirect,url_for,render_template,flash,session,send_file
+#send_file is used to send files from the server to the client, allowing you to serve files for download or display in the browser.
 from flask_session import Session #it is used to manage user sessions in a Flask application, allowing you to store and retrieve data across multiple requests for a specific user.
 from otp import genotp
 from cmail import sendmail
 from stoken import endata,dndata
 import mysql.connector
 import flask_excel as excel
+from io import BytesIO #io means input output module, it is used to handle binary data in memory, allowing you to create file-like objects that can be used to read and write binary data without the need for actual files on disk.
 mydb=mysql.connector.connect(user='root',password='Viswa@0210',host='localhost',db='snm_prj_db')
 app=Flask(__name__)
 excel.init_excel(app) #it initializes the Flask-Excel extension with the Flask application instance, enabling Excel-related functionality in the app.
@@ -331,5 +333,53 @@ def deletefiles(fid):
     else:
         flash('file deleted successfully')
         return redirect(url_for('viewallfiles'))
-        
+    
+
+@app.route('/viewfiles/<fid>')
+def viewfiles(fid):
+    if not session.get('user'):
+        flash('please login to access view files page')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select filesid, filename, filedata from filesdata where userid=%s and filesid=%s',[user_id, fid])
+        stored_filedata=cursor.fetchone()  #it will return a single tuple like ('file1.txt', b'file content in bytes')
+        print(stored_filedata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch file details')
+        return redirect(url_for('dashboard'))
+    else:
+        bytes_array=BytesIO(stored_filedata[2]) #it converts the filedata bytes into a BytesIO object, which is a file-like object that can be used to read the file content
+        return send_file(bytes_array, as_attachment=False, download_name=stored_filedata[1]) #it sends the file to the client for download, with the original filename as the download name
+
+        return render_template('viewfiles.html', stored_filedata=stored_filedata)
+
+
+@app.route('/downloadfiles/<fid>')
+def downloadfiles(fid):
+    if not session.get('user'):
+        flash('please login to access download files page')
+        return redirect(url_for('login'))
+    try:
+        cursor=mydb.cursor(buffered=True)
+        cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
+        user_id=cursor.fetchone()[0] #(1) or (2)
+        cursor.execute('select filesid, filename, filedata from filesdata where userid=%s and filesid=%s',[user_id, fid])
+        stored_filedata=cursor.fetchone()  #it will return a single tuple like ('file1.txt', b'file content in bytes')
+        print(stored_filedata)
+        cursor.close()
+    except Exception as e:
+        print(e)
+        flash('could not fetch file details')
+        return redirect(url_for('dashboard'))
+    else:
+        bytes_array=BytesIO(stored_filedata[2]) #it converts the filedata bytes into a BytesIO object, which is a file-like object that can be used to read the file content
+        return send_file(bytes_array, as_attachment=True, download_name=stored_filedata[1]) #it sends the file to the client for download, with the original filename as the download name
+
+        return render_template('downloadfiles.html', stored_filedata=stored_filedata)
+
 app.run(debug=True,use_reloader=True)
