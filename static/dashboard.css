@@ -38,6 +38,10 @@ body{
     align-items:center;
     gap:10px;
 }
+.logo a{
+    color:#fff;
+    text-decoration:none;
+}
 
 /* Nav Links */
 .nav-links{
