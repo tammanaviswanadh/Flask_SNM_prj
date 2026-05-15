@@ -1,4 +1,4 @@
-from flask import Flask,request,redirect,url_for,render_template,flash,session,send_file
+from flask import Flask,request,redirect,url_for,render_template,flash,session,send_file,jsonify
 #send_file is used to send files from the server to the client, allowing you to serve files for download or display in the browser.
 from flask_session import Session #it is used to manage user sessions in a Flask application, allowing you to store and retrieve data across multiple requests for a specific user.
 from otp import genotp
@@ -417,38 +417,61 @@ def searchnotesdata():
         flash('could not process search query')
         return redirect(url_for('dashboard'))
 
-'''
-@app.route('/searchfilesdata', methods=['POST'])
-def searchfilessdata():
-    if not session.get('user'):
-        flash('please login to access search files feature from dashboard')
-        return redirect(url_for('login'))
-    # search_query=request.form['searchquery']
-    try:
-        user_search=request.form['search'] #it gets the search query entered by the user in the search input field of the dashboard and stores it in the user_search variable
-        strg=['A-Za-z0-9']
-        pattern=re.compile(f'^{strg}',re.IGNORECASE) #it compiles a regular expression pattern that matches any string that starts with an alphanumeric character, ignoring case sensitivity     
-        if pattern.match(user_search): #it checks if the user_search query matches the compiled regular expression pattern, ensuring that the search query starts with an alphanumeric character
-            try:
-                cursor=mydb.cursor(buffered=True)
-                cursor.execute('select userid from userdata where useremail=%s', [session.get('user')])
-                user_id=cursor.fetchone()[0] #(1) or (2)
-                cursor.execute('select filesid, filename, uploaded_at from filesdata where (filesid like %s or filename like %s or uploaded_at like %s) and userid=%s',[user_search+'%', user_search+'%', user_search+'%', user_id])
-                search_result=cursor.fetchall() #it will return a list of tuples that match the search query like [('title1', '2023-09-01 10:00:00'), ('title2', '2023-09-02 11:00:00')]
-                cursor.close()
-            except Exception as e:
-                print(e)
-                flash('could not fetch search data pls check')
-                return redirect(url_for('dashboard')) 
-            else:
-                return render_template('viewallfiles.html',stored_allfilesdata=search_result) 
+
+@app.route('/forgotpassword', methods=['GET','POST'])
+def forgotpassword():
+    if request.method=='POST':
+        user_email=request.form['email']
+        try:
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('select count(*) from userdata where useremail=%s', [user_email])
+            email_count=cursor.fetchone() #(0,) or (1,)
+            cursor.close()
+        except Exception as e:
+            print(e)
+            flash('could not verify email')
+            return redirect(url_for('login'))
         else:
-            flash('invalid search query, please enter a valid search term')
-            return redirect(url_for('dashboard'))
-    except Exception as e:
-        print(e)
-        flash('could not process search query')
-        return redirect(url_for('dashboard'))
-'''
+            if email_count[0] == 1:
+                subject = f'Password Reset link for your SNM account'
+                body = f'Click the link below to reset your password: {url_for("newpassword", userdata=endata(user_email), _external=True)}'
+                sendmail(to=user_email, subject=subject, body=body)
+                flash('Password reset link has been sent to your email')
+                return redirect(url_for('forgotpassword'))
+            elif email_count[0] == 0:
+                flash('email does not exist')
+                return redirect(url_for('login'))
+    return render_template('forgotpassword.html')
+
+
+
+@app.route('/newpassword/<userdata>',methods=['GET','PUT'])
+def newpassword(userdata):
+    if request.method=='PUT':
+        try:
+            forgot_email=dndata(userdata)
+            print(forgot_email)
+        except Exception as e:
+            print(e)
+            flash('Could not verify the email')
+            return redirect(url_for('newpassword',userdata=userdata))
+        print(request.get_json())
+        npassword=request.get_json()['password']
+        try:
+            cursor=mydb.cursor(buffered=True)
+            cursor.execute('update userdata set userpassword=%s where useremail=%s',[npassword,forgot_email])
+            mydb.commit()
+            cursor.close()
+        except Exception as e:
+            print(e)
+            flash('could not update password')
+            return redirect(url_for('newpassword',userdata=userdata))
+        else:
+            flash('password updated successfully')
+            return jsonify({"message":"password updated successfully"})
+            # return render_template('login.html')
+
+    return render_template('newpassword.html',userdata=userdata)
+
 
 app.run(debug=True,use_reloader=True)
